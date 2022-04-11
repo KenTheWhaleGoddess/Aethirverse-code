@@ -3,27 +3,26 @@ pragma solidity ^0.8.7;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
 
 contract SimpleCollectible is ERC721, Ownable {
     uint256 public tokenCounter;
+    address public wl_nft;
+    uint16 public WL_NFT_TOKEN_ID = 2;
 
-    uint256 private _presalePrice = 0; //.00 ETH
-    uint256 private _salePrice = 50000000000000000; // .05 ETH
+    uint256 private _presalePrice = .077 ether; 
+    uint256 private _salePrice = .077 ether;
 
     uint256 private _maxPerTx = 21; // Set to one higher than actual, to save gas on <= checks.
 
-    uint256 public _presaleSupply = 100;
-    uint256 public _totalSupply = 10000; 
+    uint256 public _presaleSupply = 3333;
+    uint256 public _totalSupply = 7777; 
 
     string private _baseTokenURI;
     uint private _saleState; // 0 - No sale. 1 - Presale. 2 - Main Sale.
 
-    // Faciliating the needed functionality for the presale
-    mapping(address => bool) addressToPreSaleEntry;
-    
-    constructor () ERC721 ("Test NFT","PERLIN")  {
+    constructor () ERC721 ("Aethirverse","AETHIR")  {
         tokenCounter = 0;
         _saleState = 0;
     }
@@ -31,11 +30,10 @@ contract SimpleCollectible is ERC721, Ownable {
     function mintPresaleCollectibles(uint256 _count) public payable {
         require(isPresaleOpen(), "Presale is not yet open. See wenPresale and wenSale for more info");
         require(!isPresaleComplete(), "Presale is over. See wenSale for more info");
-
-        require(isWalletInPresale(msg.sender), "Wallet isnt in presale! The owner needs to addWalletToPresale.");
         require((_count + tokenCounter) <= _presaleSupply, "Ran out of NFTs for presale! Sry!");
         require(msg.value >= (_presalePrice * _count), "Ether value sent is too low");
 
+        IERC1155(wl_nft).safeTransferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD, 2, _count, '');
         createCollectibles(msg.sender, _count);
     }
 
@@ -54,13 +52,6 @@ contract SimpleCollectible is ERC721, Ownable {
 
         createCollectibles(msg.sender, _count);
     }
-
-	function mintWithWGPass(address _user) public {
-	    require(msg.sender == address(0xDF47D84787c4607Ad3c7034D2b238Beec2B0cf49), "Only the mint pass contract may call this function");
-        require((1 + tokenCounter) <= _totalSupply, "Ran out of NFTs for sale! Sry!");
-        
-        createCollectibles(_user, 1);
-	}
 
     function createCollectibles(address _user, uint256 _count) private {
         for(uint i = 0; i < _count; i++) {
@@ -117,13 +108,10 @@ contract SimpleCollectible is ERC721, Ownable {
         return _presalePrice;
     }
 
-    function isWalletInPresale(address _address) public view returns (bool) {
-        return addressToPreSaleEntry[_address];
+    function setWLNFT(address _nft) public onlyOwner {
+        wl_nft = _nft;
     }
-    function addWalletToPreSale(address _address) public onlyOwner {
-        addressToPreSaleEntry[_address] = true;
-    }
-    
+
     function setBaseURI(string memory baseURI) public onlyOwner {
         _baseTokenURI = baseURI;
     }
