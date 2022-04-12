@@ -23,7 +23,7 @@ contract SimpleCollectible is ERC721, Ownable {
     string private _baseSuffix;
     uint private _saleState; // 0 - No sale. 1 - Presale. 2 - Main Sale.
 
-    constructor () ERC721 ("Aethir Token","AETHIR")  {
+    constructor () ERC721 ("Raggedy Army","RAGGEDY")  {
         setBaseURI('ipfs://QmcZjhgnfrgxN5iqUtkYziU1HXw8XX9rCMA28Bwh3xG2tz');
         setBaseSuffix('.json');
     }
@@ -49,7 +49,7 @@ contract SimpleCollectible is ERC721, Ownable {
         require(isSaleOpen(), "Sale is not yet open");
         require(isPresaleComplete(), "Presale has not started or is ongoing");
         require(_count < _maxPerTx, "Cant mint more than mintMax");
-        require((_count + tokenCounter) <= _totalSupply, "Ran out of NFTs for sale! Sry!");
+        require((_count + tokenCounter) <= (_totalSupply - 300), "Ran out of NFTs for sale! Sry!");
         require(msg.value >= (_salePrice * _count), "Ether value sent is not correct");
 
         createCollectibles(msg.sender, _count);
@@ -139,6 +139,11 @@ contract SimpleCollectible is ERC721, Ownable {
         wl_nft = _nft;
     }
 
+
+    function setYieldToken(address _nft) public onlyOwner {
+        yieldToken = _nft;
+    }
+
     function setBaseURI(string memory baseURI) public onlyOwner {
         _baseTokenURI = baseURI;
     }
@@ -176,5 +181,11 @@ contract SimpleCollectible is ERC721, Ownable {
 		    yieldToken.updateReward(from, to, tokenId);
         }
 		ERC721.safeTransferFrom(from, to, tokenId, _data);
+	}
+	function safeTransferFrom(address from, address to, uint256 tokenId) public override {
+        if (yieldToken != address(0)) {
+		    yieldToken.updateReward(from, to, tokenId);
+        }
+		ERC721.safeTransferFrom(from, to, tokenId);
 	}
 }
